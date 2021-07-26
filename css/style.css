@@ -1,0 +1,146 @@
+body{
+	width:100%;
+	height:100vh;
+	padding:0px;
+	margin:0px;
+}
+
+.header{
+	width: 100%;
+	height:auto;
+	position:relative;
+	top:0px;
+	left:0px;
+}
+.header .nav{
+	width:100%;
+	height:50px;
+	box-shadow: 0px 0px 10px #ccc;
+}
+.header .ovl{
+	width:100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding:30px;
+	flex-wrap: wrap;
+}
+.header .ovl .txt-cont{
+	width:50%;
+}
+
+.header .ovl img{
+	width:50%;
+}
+
+/* section */
+.section{
+	width:100%;
+	height:100vh;
+	padding:0px;
+	margin: 0px;
+	position: relative;
+	top:50px;
+}
+.section .main{
+	width:100%;
+	height:auto;
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	margin-bottom: 30px;
+}
+.section .main .btn{
+	text-align: center;
+	padding:12px 20px;
+	background: #6768d3;
+	box-shadow: 0px 0px 2px #000;
+	/* border: 3px solid #6768d3; */
+}
+.section .main .btn:focus{
+	border: 5px solid #686ad8;
+}
+.section .main .content{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding:25px;
+	flex-wrap: wrap;
+	background: #6768d3;
+
+}
+.section .main .content .txt{
+	width:50%;
+	color:#fff;
+}
+.section .main .content img{
+	width:50%;
+}
+.section .footer{
+	width:100%;
+	height:30vh;
+	background: #000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color:#fff;
+	text-align: center;
+}
+
+/* modal */
+.modal-cont{
+	width:100%;
+	height: 100vh;
+	padding:0px;
+	position: fixed;
+	left:0px;
+	top:0px;
+	z-index: 10;
+	background: rgba(0,0,0,.8);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	display: none;
+	transition:all 1s ease;
+}
+.modal-cont .content{
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	/* width:300px; */
+}
+.modal-cont .content .box{
+	width:250px;
+	height:auto;
+	background: #fff;
+	padding: 10px;
+	text-align: center;
+	margin: 5px;
+	border-radius: 5px;
+}
+.modal-cont .content .box img{
+	width:40%;
+	border-radius: 50%;
+}
+
+
+@media(max-width: 500px) {
+	.header .ovl .txt-cont{
+		width:100%;
+	}
+	
+	.header .ovl img{
+		display: none;
+	}
+
+	.section .main .content .txt{
+		width:100%;
+		color:#fff;
+	}
+	.section .main .content img{
+		width:100%;
+		margin-top:50px;
+	}
+}
