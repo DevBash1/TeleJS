@@ -11,6 +11,8 @@ body{
 	position:relative;
 	top:0px;
 	left:0px;
+	background-color: #000;
+	color:#fff;
 }
 .header .nav{
 	width:100%;
@@ -24,6 +26,7 @@ body{
 	justify-content: center;
 	padding:30px;
 	flex-wrap: wrap;
+	background: rgba(0,0,0,.8);
 }
 .header .ovl .txt-cont{
 	width:50%;
@@ -44,11 +47,11 @@ body{
 }
 .section .main{
 	width:100%;
-	height:auto;
+	height:70vh;
 	display: flex;
 	align-items: center;
 	flex-direction: column;
-	margin-bottom: 30px;
+	margin-bottom: 120px;
 }
 .section .main .btn{
 	text-align: center;
@@ -76,7 +79,7 @@ body{
 .section .main .content img{
 	width:50%;
 }
-.section .footer{
+.footer{
 	width:100%;
 	height:30vh;
 	background: #000;
