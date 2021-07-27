@@ -18,6 +18,10 @@ function Tele(token) {
     let listenForFile = false;
     let listenForVoice = false;
     let listenForAllMessage = false;
+    let listenForGroupMessage = false;
+    let listenForEditedMessage = false;
+    let listenForNewMember = false;
+    let listenForLeftMember = false;
 
     let url = this.api + this.token;
 
@@ -51,6 +55,8 @@ function Tele(token) {
                 if (data.success != undefined) {
                     data.success(xh.responseText);
                 }
+            }else if(xh.status == 400){
+                data.error(xh.responseText);
             }
         }
         xh.onerror = function() {
@@ -58,6 +64,49 @@ function Tele(token) {
                 data.error(xh.responseText);
             }
         }
+    }
+
+    function ajaxSync(json) {
+        json = JSON.stringify(json);
+        let res = "";
+        var data = JSON.parse(json);
+        var url = data.url;
+        var type = data.type;
+        var params = data.params.toString();
+
+        if (window.XMLHttpRequest) {
+            // code for modern browsers
+            xh = new XMLHttpRequest();
+        } else {
+            // code for old IE browsers
+            xh = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+
+        xh.onload = function() {
+            if (xh.status == 200) {
+                res = xh.responseText;
+            }
+        }
+        xh.onerror = function(){
+            res = false;
+            return false;
+        }
+        if (type.toLowerCase() == "get") {
+            xh.open(type, url, false);
+            xh.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            try{
+                xh.send();
+            }catch(e){
+                return false;
+            }
+        } else if (type.toLowerCase() == "post") {
+            xh.open(type, url, false);
+            xh.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xh.send(params);
+        } else {
+            throw ("Can only take GET and POST");
+        }
+        return res;
     }
 
     async function poll() {
@@ -95,16 +144,49 @@ function Tele(token) {
             if (json.result.length > 1) {
                 let res = json.result[json.result.length - 1];
                 self.res = res;
+                
                 //Set user details
-                self.id = res.message.chat.id;
-                self.first_name = res.message.chat.first_name;
-                self.username = res.message.chat.username;
-                self.type = res.message.chat.type;
-                self.is_bot = res.message.from.is_bot;
-                self.language_code = res.message.from.language_code;
+                if(Object.keys(res).includes("message")){
+                    if(res.message.chat.type == "private"){
+                        self.id = res.message.chat.id;
+                        self.first_name = res.message.chat.first_name;
+                        self.username = res.message.chat.username;
+                        self.type = res.message.chat.type;
+                        self.is_bot = res.message.from.is_bot;
+                        self.language_code = res.message.from.language_code;
+                    }else if(res.message.chat.type == "supergroup"){
+                        self.id = res.message.chat.id;
+                        self.group_name = res.message.chat.title;
+                        self.group_username = res.message.chat.username;
+                        self.type = res.message.chat.type;
+                        self.is_bot = res.message.from.is_bot;
+                        self.language_code = res.message.from.language_code;
+                        self.first_name = res.message.from.first_name;
+                        self.username = res.message.from.username;
+                        self.user_id = res.message.from.id;
+                    }
+                }else if(Object.keys(res).includes("edited_message")){
+                    if(res.edited_message.chat.type == "private"){
+                        self.id = res.edited_message.chat.id;
+                        self.first_name = res.edited_message.chat.first_name;
+                        self.username = res.edited_message.chat.username;
+                        self.type = res.edited_message.chat.type;
+                        self.is_bot = res.edited_message.from.is_bot;
+                        self.language_code = res.edited_message.from.language_code;
+                    }else if(res.edited_message.chat.type == "supergroup"){
+                        self.id = res.edited_message.chat.id;
+                        self.group_name = res.edited_message.chat.title;
+                        self.group_username = res.edited_message.chat.username;
+                        self.type = res.edited_message.chat.type;
+                        self.is_bot = res.edited_message.from.is_bot;
+                        self.language_code = res.edited_message.from.language_code;
+                        self.first_name = res.edited_message.from.first_name;
+                        self.username = res.edited_message.from.username;
+                        self.user_id = res.edited_message.from.id;
+                    }
+                }
                 console.log(res);
-
-                try{
+                if(Object.keys(res).includes("message")){
                     if(Object.keys(res.message).includes("text")){
                         if(listenForMessage.indexOf(res.message.text) != -1) {
                             let index = listenForMessage.indexOf(res.message.text);
@@ -120,8 +202,11 @@ function Tele(token) {
                                 startFunctions[i](res.message);
                             }
                         });
-                        if(listenForAllMessage){
+                        if(listenForAllMessage && res.message.chat.type != "supergroup"){
                             listenForAllMessage(res.message.text);
+                        }
+                        if(listenForGroupMessage && res.message.chat.type == "supergroup"){
+                            listenForGroupMessage(res.message.text);
                         }
                     }
                     //listen and catch photos
@@ -148,10 +233,24 @@ function Tele(token) {
                             listenForVoice(res.message.voice);
                         }
                     }
-                    self.last = json.result[json.result.length-1].update_id;
-                }catch(e){
 
+                    if(Object.keys(res.message).includes("new_chat_member")){
+                        if(listenForNewMember){
+                            listenForNewMember(res.message.new_chat_member);
+                        }
+                    }
+
+                    if(Object.keys(res.message).includes("left_chat_member")){
+                        if(listenForLeftMember){
+                            listenForLeftMember(res.message.left_chat_member);
+                        }
+                    }
+                }else if(Object.keys(res).includes("edited_message")){
+                    if(listenForEditedMessage){
+                        listenForEditedMessage(res.edited_message);
+                    }
                 }
+                self.last = json.result[json.result.length-1].update_id;
             }
         }
         // Call poll() again to get the next message
@@ -167,6 +266,18 @@ function Tele(token) {
     this.onMessage = function(message, callback) {
         listenForMessage.push(message);
         callFunctions.push(callback);
+    }
+    this.onGroupMessage = function(callback){
+        listenForGroupMessage = callback;
+    }
+    this.onMessageEdited = function(callback){
+        listenForEditedMessage = callback;
+    }
+    this.onNewMember = function(callback){
+        listenForNewMember = callback;
+    }
+    this.onMemberLeft = function(callback){
+        listenForLeftMember = callback;
     }
     this.getMessage = function(callback){
         listenForAllMessage = callback;
@@ -206,13 +317,15 @@ function Tele(token) {
             }
         })
     }
-    this.sendMessage = function(id, message) {
+    this.sendMessage = function(message) {
+        let id = self.id;
         ajax({
             url: url + `/sendMessage?chat_id=${id}&text=${encodeURI(message)}&parse_mode=MarkdownV2`,
             type: "POST",
             params: "",
             success: function(res) {
                 self.botLast = JSON.parse(res);
+                console.log(JSON.parse(res))
             },
             error: function(res) {
                 console.error(res);
@@ -236,7 +349,7 @@ function Tele(token) {
         })
     }
     this.deleteMessage = function() {
-        let message_id = self.botLast.result.message_id;
+        let message_id = self.res.message.message_id;
         let id = self.id;
         try{
             ajax({
@@ -251,9 +364,12 @@ function Tele(token) {
 
         }
     }
-    this.sendPhoto = function(id, photoUrl) {
+    this.sendPhoto = function(chat_id=null, photoUrl) {
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
         ajax({
-            url: url + `/sendPhoto?chat_id=${id}&photo=${photoUrl}`,
+            url: url + `/sendPhoto?chat_id=${chat_id}&photo=${photoUrl}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -264,9 +380,12 @@ function Tele(token) {
             }
         })
     }
-    this.sendAudio = function(id, audioUrl) {
+    this.sendAudio = function(chat_id=null, audioUrl) {
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
         ajax({
-            url: url + `/sendAudio?chat_id=${id}&audio=${audioUrl}`,
+            url: url + `/sendAudio?chat_id=${chat_id}&audio=${audioUrl}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -277,9 +396,12 @@ function Tele(token) {
             }
         })
     }
-    this.sendDocument = function(id, documentUrl) {
+    this.sendDocument = function(chat_id=null, documentUrl) {
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
         ajax({
-            url: url + `/sendDocument?chat_id=${id}&document=${documentUrl}`,
+            url: url + `/sendDocument?chat_id=${chat_id}&document=${documentUrl}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -290,9 +412,12 @@ function Tele(token) {
             }
         })
     }
-    this.sendVideo = function(id, videoUrl) {
+    this.sendVideo = function(chat_id=null, videoUrl) {
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
         ajax({
-            url: url + `/sendVideo?chat_id=${id}&video=${videoUrl}`,
+            url: url + `/sendVideo?chat_id=${chat_id}&video=${videoUrl}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -303,11 +428,11 @@ function Tele(token) {
             }
         })
     }
-    this.forwardMessageTo = function(id) {
+    this.forwardMessageTo = function(chat_id) {
         let from_id = self.id;
         let msg_id = self.res.message.message_id;
         ajax({
-            url: url + `/forwardMessage?chat_id=${id}&from_chat_id=${from_id}&message_id=${msg_id}`,
+            url: url + `/forwardMessage?chat_id=${chat_id}&from_chat_id=${from_id}&message_id=${msg_id}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -318,11 +443,11 @@ function Tele(token) {
             }
         })
     }
-    this.copyMessageTo = function(id) {
+    this.copyMessageTo = function(chat_id) {
         let from_id = self.id;
         let msg_id = self.res.message.message_id;
         ajax({
-            url: url + `/copyMessage?chat_id=${id}&from_chat_id=${from_id}&message_id=${msg_id}`,
+            url: url + `/copyMessage?chat_id=${chat_id}&from_chat_id=${from_id}&message_id=${msg_id}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -333,10 +458,12 @@ function Tele(token) {
             }
         })
     }
-    this.sendChatAction = function(action) {
-        let id = self.id;
+    this.sendChatAction = function(action,chat_id=null) {
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
         ajax({
-            url: url + `/sendChatAction?chat_id=${id}&action=${action}`,
+            url: url + `/sendChatAction?chat_id=${chat_id}&action=${action}`,
             type: "POST",
             params: "",
             success: function(res) {
@@ -362,49 +489,7 @@ function Tele(token) {
         })
     }
     this.getFile = function(file_id){
-        function ajaxSync(json) {
-            json = JSON.stringify(json);
-            let res = "";
-            var data = JSON.parse(json);
-            var url = data.url;
-            var type = data.type;
-            var params = data.params.toString();
-
-            if (window.XMLHttpRequest) {
-                // code for modern browsers
-                xh = new XMLHttpRequest();
-            } else {
-                // code for old IE browsers
-                xh = new ActiveXObject("Microsoft.XMLHTTP");
-            }
-
-            xh.onload = function() {
-                if (xh.status == 200) {
-                    res = xh.responseText;
-                }
-            }
-            xh.onerror = function(){
-                res = false;
-                return false;
-            }
-            if (type.toLowerCase() == "get") {
-                xh.open(type, url, false);
-                xh.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                try{
-                    xh.send();
-                }catch(e){
-                    return false;
-                }
-            } else if (type.toLowerCase() == "post") {
-                xh.open(type, url, false);
-                xh.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xh.send(params);
-            } else {
-                throw ("Can only take GET and POST");
-            }
-            return res;
-        }
-
+        
         let response = ajaxSync({
             url: url + `/getFile?file_id=${file_id}`,
             type: "POST",
@@ -417,6 +502,283 @@ function Tele(token) {
             console.error("getFile failed :(");
         }
 
+    }
+    this.unBanMember = function(group_username,user_id){
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/unbanChatMember?user_id=${user_id}&chat_id=${group_username}&only_if_banned=true`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+    this.banMember = function(group_username=null,user_id=null){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+            user_id = self.res.message.from.id;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/banChatMember?user_id=${user_id}&chat_id=${group_username}&only_if_banned=true`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+    this.setGroupPhoto = function(photoUrl,group_username){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/setChatPhoto?chat_id=${group_username}&photo=${photoUrl}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+    this.removeGroupPhoto = function(group_username=null){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/deleteChatPhoto?chat_id=${group_username}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.setGroupName = function(group_new_name,group_username=null){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/setChatTitle?chat_id=${group_username}&title=${group_new_name}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.setGroupInfo = function(group_new_info,group_username=null){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        ajax({
+            url: url + `/setChatDescription?chat_id=${group_username}&description=${group_new_info}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.pinMessage = function(message_id=null,chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        if(message_id == null){
+            message_id = self.res.message.message_id;
+        }
+        ajax({
+            url: url + `/pinChatMessage?chat_id=${chat_id}&message_id=${message_id}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.unpinMessage = function(chat_id=null,message_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        if(message_id == null){
+            ajax({
+                url: url + `/unpinChatMessage?chat_id=${chat_id}`,
+                type: "POST",
+                params: "",
+                success: function(res) {
+                    self.botLast = JSON.parse(res);
+                },
+                error: function(res) {
+                    console.error(res);
+                }
+            })
+            return true;
+        }
+        ajax({
+            url: url + `/unpinChatMessage?chat_id=${chat_id}&message_id=${message_id}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.unpinAllMessage = function(chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        
+        ajax({
+            url: url + `/unpinAllChatMessages?chat_id=${chat_id}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.leaveGroup = function(group_username=null){
+        if(group_username == null){
+            group_username = "@" + self.res.message.chat.username;
+        }
+        if(!group_username.startsWith("@")){
+            group_username = "@" + group_username; 
+        }
+        
+        ajax({
+            url: url + `/leaveChat?chat_id=${group_username}`,
+            type: "POST",
+            params: "",
+            success: function(res) {
+                self.botLast = JSON.parse(res);
+            },
+            error: function(res) {
+                console.error(res);
+            }
+        })
+    }
+
+    this.getChat = function(chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        
+        let response = ajaxSync({
+            url: url + `/getChat?chat_id=${chat_id}`,
+            type: "POST",
+            params: "",
+        });
+
+        return JSON.parse(response).result;
+    }
+
+    this.getGroupAdmins = function(chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        
+        let response = ajaxSync({
+            url: url + `/getChatAdministrators?chat_id=${chat_id}`,
+            type: "POST",
+            params: "",
+        });
+
+        return JSON.parse(response).result;
+    }
+
+    this.getGroupMemberLength = function(chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        
+        let response = ajaxSync({
+            url: url + `/getChatMemberCount?chat_id=${chat_id}`,
+            type: "POST",
+            params: "",
+        });
+
+        return JSON.parse(response).result;
+    }
+
+    this.getGroupMember = function(user_id=null,chat_id=null){
+        if(chat_id == null){
+            chat_id = self.res.message.chat.id;
+        }
+        if(user_id == null){
+            user_id = self.res.message.from.id;
+        }
+        
+        let response = ajaxSync({
+            url: url + `/getChatMember?chat_id=${chat_id}&user_id=${user_id}`,
+            type: "POST",
+            params: "",
+        });
+
+        return JSON.parse(response).result;
+    }
+
+    this.getUserPhotos = function(user_id=null){
+        if(user_id == null){
+            user_id = self.res.message.from.id;
+        }
+        
+        let response = ajaxSync({
+            url: url + `/getUserProfilePhotos?user_id=${user_id}`,
+            type: "POST",
+            params: "",
+        });
+
+        return JSON.parse(response).result;
     }
 }
 
