@@ -1,5 +1,5 @@
-### Telejs
-#### A fast, minimalist, javascript library for creating custom telegram bot. with the below functionality:
+# TeleJS
+### A fast, minimalist, javascript library for creating telegram bots with the below functionalities:
 
 - send message
 - send photo
