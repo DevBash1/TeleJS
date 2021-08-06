@@ -22,6 +22,7 @@ function Tele(token) {
     let listenForEditedMessage = false;
     let listenForNewMember = false;
     let listenForLeftMember = false;
+    let listenForEvents = false;
 
     let url = this.api + this.token;
 
@@ -136,14 +137,19 @@ function Tele(token) {
             //console.log(json);
             if (self.last == null) {
                 try{
-                    self.last = json.result[json.result.length-1].update_id;
+                    self.last = json.result[1].update_id;
                 }catch(e){
-
+                    
                 }
             }
             if (json.result.length > 1) {
-                let res = json.result[json.result.length - 1];
+                let res = json.result[1];
                 self.res = res;
+
+                //handle any events manually
+                if(listenForEvents){
+                    listenForEvents(res);
+                }
                 
                 //Set user details
                 if(Object.keys(res).includes("message")){
@@ -185,7 +191,7 @@ function Tele(token) {
                         self.user_id = res.edited_message.from.id;
                     }
                 }
-                console.log(res);
+                //console.log(res);
                 if(Object.keys(res).includes("message")){
                     if(Object.keys(res.message).includes("text")){
                         if(listenForMessage.indexOf(res.message.text) != -1) {
@@ -250,11 +256,15 @@ function Tele(token) {
                         listenForEditedMessage(res.edited_message);
                     }
                 }
-                self.last = json.result[json.result.length-1].update_id;
+                self.last = json.result[1].update_id;
             }
         }
         // Call poll() again to get the next message
-        await poll();
+        try{
+            await poll();
+        }catch(e){
+            
+        }
     }
     this.start = function() {
         try{
@@ -266,6 +276,9 @@ function Tele(token) {
     this.onMessage = function(message, callback) {
         listenForMessage.push(message);
         callFunctions.push(callback);
+    }
+    this.onEvent = function(callback){
+        listenForEvents = callback;
     }
     this.onGroupMessage = function(callback){
         listenForGroupMessage = callback;
@@ -313,7 +326,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -325,10 +338,9 @@ function Tele(token) {
             params: "",
             success: function(res) {
                 self.botLast = JSON.parse(res);
-                console.log(JSON.parse(res))
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -344,7 +356,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -357,7 +369,7 @@ function Tele(token) {
                 type: "POST",
                 params: "",
                 error: function(res) {
-                    console.error(res);
+                    console.warn(res);
                 }
             })
         }catch(e){
@@ -376,7 +388,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -392,7 +404,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -408,7 +420,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -424,7 +436,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -439,7 +451,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -454,7 +466,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -470,7 +482,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -484,7 +496,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -499,7 +511,7 @@ function Tele(token) {
         if(response){
             return "https://api.telegram.org/file/bot" + self.token + "/" + JSON.parse(response).result.file_path;
         }else{
-            console.error("getFile failed :(");
+            console.warn("getFile failed :(");
         }
 
     }
@@ -515,7 +527,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -535,7 +547,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -554,7 +566,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -573,7 +585,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -593,7 +605,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -613,7 +625,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -633,7 +645,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -651,7 +663,7 @@ function Tele(token) {
                     self.botLast = JSON.parse(res);
                 },
                 error: function(res) {
-                    console.error(res);
+                    console.warn(res);
                 }
             })
             return true;
@@ -664,7 +676,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -682,7 +694,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
@@ -703,7 +715,7 @@ function Tele(token) {
                 self.botLast = JSON.parse(res);
             },
             error: function(res) {
-                console.error(res);
+                console.warn(res);
             }
         })
     }
